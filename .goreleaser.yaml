@@ -1,0 +1,59 @@
+version: 2
+
+project_name: kzlogviewer
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: kzlogviewer
+    main: ./cmd/kzlogviewer
+    binary: kzlogviewer
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/karozadev/KzLogViewer/internal/version.Version={{ .Version }}
+      - -X github.com/karozadev/KzLogViewer/internal/version.Commit={{ .Commit }}
+      - -X github.com/karozadev/KzLogViewer/internal/version.Date={{ .Date }}
+
+archives:
+  - id: kzlogviewer
+    ids:
+      - kzlogviewer
+    name_template: "kzlogviewer_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+release:
+  github:
+    owner: karozadev
+    name: KzLogViewer
+  prerelease: auto
