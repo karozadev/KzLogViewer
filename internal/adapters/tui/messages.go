@@ -45,14 +45,24 @@ func tick() tea.Cmd {
 
 // checkForUpdate queries checker once, bounded by a short timeout so a
 // slow or unreachable network never delays the TUI beyond a few seconds.
-func checkForUpdate(checker ports.UpdateChecker) tea.Cmd {
+// It uses ReleasesSince rather than LatestRelease so the comparison against
+// currentVersion happens once, semver-aware, in the adapter: LatestRelease
+// alone would report "a new version" even when it is the version already
+// running (e.g. tag "v0.1.0" vs. the ldflags-injected "0.1.0").
+func checkForUpdate(checker ports.UpdateChecker, currentVersion string) tea.Cmd {
 	if checker == nil {
 		return nil
 	}
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		release, err := checker.LatestRelease(ctx)
-		return updateCheckMsg{release: release, err: err}
+		releases, err := checker.ReleasesSince(ctx, currentVersion)
+		if err != nil {
+			return updateCheckMsg{err: err}
+		}
+		if len(releases) == 0 {
+			return updateCheckMsg{}
+		}
+		return updateCheckMsg{release: releases[len(releases)-1]}
 	}
 }

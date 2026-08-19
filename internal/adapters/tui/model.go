@@ -93,6 +93,6 @@ func (m Model) Init() tea.Cmd {
 		waitForEntry(m.entriesCh),
 		waitForSourceErr(m.errsCh),
 		tick(),
-		checkForUpdate(m.checker),
+		checkForUpdate(m.checker, m.currentVersion),
 	)
 }

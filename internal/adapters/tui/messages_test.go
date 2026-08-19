@@ -67,8 +67,9 @@ func TestTickReturnsTickMsg(t *testing.T) {
 }
 
 type fakeChecker struct {
-	release ports.Release
-	err     error
+	release  ports.Release
+	releases []ports.Release
+	err      error
 }
 
 func (f fakeChecker) LatestRelease(ctx context.Context) (ports.Release, error) {
@@ -76,22 +77,50 @@ func (f fakeChecker) LatestRelease(ctx context.Context) (ports.Release, error) {
 }
 
 func (f fakeChecker) ReleasesSince(ctx context.Context, currentVersion string) ([]ports.Release, error) {
-	return nil, f.err
+	return f.releases, f.err
 }
 
-func TestCheckForUpdateReturnsResult(t *testing.T) {
-	cmd := checkForUpdate(fakeChecker{release: ports.Release{Version: "v9.9.9"}})
+func TestCheckForUpdateReturnsNewestSkippedRelease(t *testing.T) {
+	checker := fakeChecker{releases: []ports.Release{
+		{Version: "v9.9.0"},
+		{Version: "v9.9.9"},
+	}}
+	cmd := checkForUpdate(checker, "v9.8.0")
 	msg, ok := cmd().(updateCheckMsg)
 	if !ok {
 		t.Fatalf("got %T, want updateCheckMsg", msg)
 	}
 	if msg.release.Version != "v9.9.9" {
-		t.Errorf("Version = %q", msg.release.Version)
+		t.Errorf("Version = %q, want the newest of the skipped releases", msg.release.Version)
+	}
+}
+
+func TestCheckForUpdateNoNewerRelease(t *testing.T) {
+	checker := fakeChecker{releases: nil}
+	cmd := checkForUpdate(checker, "v0.1.0")
+	msg, ok := cmd().(updateCheckMsg)
+	if !ok {
+		t.Fatalf("got %T, want updateCheckMsg", msg)
+	}
+	if msg.release.Version != "" || msg.err != nil {
+		t.Errorf("expected an empty result when already up to date, got %+v", msg)
+	}
+}
+
+func TestCheckForUpdatePropagatesError(t *testing.T) {
+	checker := fakeChecker{err: errors.New("network unreachable")}
+	cmd := checkForUpdate(checker, "v0.1.0")
+	msg, ok := cmd().(updateCheckMsg)
+	if !ok {
+		t.Fatalf("got %T, want updateCheckMsg", msg)
+	}
+	if msg.err == nil {
+		t.Error("expected the error to be propagated")
 	}
 }
 
 func TestCheckForUpdateNilChecker(t *testing.T) {
-	if cmd := checkForUpdate(nil); cmd != nil {
+	if cmd := checkForUpdate(nil, "v0.1.0"); cmd != nil {
 		t.Error("expected nil command for nil checker")
 	}
 }

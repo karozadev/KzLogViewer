@@ -34,7 +34,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case updateCheckMsg:
 		m.updateChecked = true
-		if msg.err == nil {
+		if msg.err == nil && msg.release.Version != "" {
 			m.updateRelease = &msg.release
 		}
 		return m, nil

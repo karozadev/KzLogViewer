@@ -216,3 +216,16 @@ func TestUpdateCheckMsgIgnoresError(t *testing.T) {
 		t.Errorf("expected no release stored on error, got %+v", m.updateRelease)
 	}
 }
+
+// TestUpdateCheckMsgIgnoresEmptyVersion covers the regression where the
+// startup banner announced "a new version" even while already running the
+// latest one: checkForUpdate reports no update as a zero-value release
+// (err == nil, Version == ""), which must not be stored as an update.
+func TestUpdateCheckMsgIgnoresEmptyVersion(t *testing.T) {
+	m := newTestModel()
+	updated, _ := m.Update(updateCheckMsg{release: ports.Release{}})
+	m = updated.(Model)
+	if m.updateRelease != nil {
+		t.Errorf("expected no release stored when already up to date, got %+v", m.updateRelease)
+	}
+}
