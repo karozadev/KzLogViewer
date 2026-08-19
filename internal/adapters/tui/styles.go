@@ -15,6 +15,7 @@ var (
 	colorAccent  = lipgloss.Color("#6C5CE7")
 	colorMuted   = lipgloss.Color("#6B7280")
 	colorBg      = lipgloss.Color("#1C1F26")
+	colorInsert  = lipgloss.Color("#3FB950")
 
 	styleHeader = lipgloss.NewStyle().Bold(true).Foreground(colorAccent)
 	styleStatus = lipgloss.NewStyle().Foreground(colorMuted)
@@ -23,6 +24,12 @@ var (
 	styleSelectedLine = lipgloss.NewStyle().Bold(true).Background(lipgloss.Color("#2A2E37"))
 	styleFieldKey     = lipgloss.NewStyle().Foreground(colorAccent)
 	styleSearchPrompt = lipgloss.NewStyle().Bold(true).Foreground(colorAccent)
+
+	// styleModeNormal/styleModeInsert render the mode badge in the status
+	// bar so it is always obvious whether keystrokes are interpreted as
+	// commands or typed into the search box.
+	styleModeNormal = lipgloss.NewStyle().Bold(true).Foreground(colorBg).Background(colorAccent).Padding(0, 1)
+	styleModeInsert = lipgloss.NewStyle().Bold(true).Foreground(colorBg).Background(colorInsert).Padding(0, 1)
 )
 
 // severityColor maps a log severity to the color used to render it,

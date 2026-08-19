@@ -64,7 +64,11 @@ func (m Model) renderSearchBar() string {
 	if m.containerFilter != "" {
 		filter = m.containerFilter
 	}
-	prompt := styleSearchPrompt.Render(fmt.Sprintf("[%s | %s] ", mode, filter))
+	promptStyle := styleSearchPrompt
+	if m.searchFocused {
+		promptStyle = promptStyle.Foreground(colorInsert)
+	}
+	prompt := promptStyle.Render(fmt.Sprintf("[%s | %s] ", mode, filter))
 	return prompt + m.searchInput.View()
 }
 
@@ -97,15 +101,24 @@ func (m Model) renderDetailBody(height int) string {
 	return strings.Join(lines, "\n")
 }
 
+// renderStatusBar renders the bottom bar, always led by a mode badge
+// (NORMAL or INSERT) so it is unambiguous whether keystrokes are
+// interpreted as commands or typed into the search box.
 func (m Model) renderStatusBar() string {
+	badge := styleModeNormal.Render("NORMAL")
+	help := "/ search   tab mode   c container   enter detail   p pause   q quit"
+	if m.searchFocused {
+		badge = styleModeInsert.Render("INSERT")
+		help = "enter confirm search   esc cancel"
+	}
+
 	state := "streaming"
 	if m.paused {
 		state = "paused"
 	}
-	help := "/ search  tab mode  c container  enter detail  p pause  q quit"
-	status := fmt.Sprintf("%s | %s", state, help)
+	rest := fmt.Sprintf(" %s | %s", state, help)
 	if m.lastErr != nil {
-		status = fmt.Sprintf("error: %v | %s", m.lastErr, help)
+		rest = fmt.Sprintf(" error: %v | %s", m.lastErr, help)
 	}
-	return styleStatus.Render(status)
+	return badge + styleStatus.Render(rest)
 }

@@ -62,6 +62,44 @@ func TestViewShowsUpdateBanner(t *testing.T) {
 	}
 }
 
+func TestStatusBarShowsNormalModeByDefault(t *testing.T) {
+	m := newTestModel()
+	out := stripANSI(m.View())
+	if !strings.Contains(out, "NORMAL") {
+		t.Errorf("expected NORMAL mode badge, got:\n%s", out)
+	}
+	if strings.Contains(out, "INSERT") {
+		t.Errorf("did not expect INSERT mode badge while not searching, got:\n%s", out)
+	}
+}
+
+func TestStatusBarShowsInsertModeWhileSearching(t *testing.T) {
+	m := newTestModel()
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("/")})
+	m = updated.(Model)
+
+	out := stripANSI(m.View())
+	if !strings.Contains(out, "INSERT") {
+		t.Errorf("expected INSERT mode badge while searching, got:\n%s", out)
+	}
+	if strings.Contains(out, "NORMAL") {
+		t.Errorf("did not expect NORMAL mode badge while searching, got:\n%s", out)
+	}
+}
+
+func TestStatusBarReturnsToNormalAfterSearch(t *testing.T) {
+	m := newTestModel()
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("/")})
+	m = updated.(Model)
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	m = updated.(Model)
+
+	out := stripANSI(m.View())
+	if !strings.Contains(out, "NORMAL") {
+		t.Errorf("expected NORMAL mode badge after esc, got:\n%s", out)
+	}
+}
+
 func TestQueryModeLabel(t *testing.T) {
 	cases := map[ports.QueryMode]string{
 		ports.QueryModeText:    "text",
