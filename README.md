@@ -32,7 +32,7 @@ you a Kibana-style search and density view entirely in your terminal.
 - **Smart parser.** Automatic JSON detection, multiline stack trace reassembly, and severity-based
   coloring (`DEBUG`, `INFO`, `WARN`, `ERROR`).
 - **Self-updating.** KzLogViewer checks GitHub Releases on startup and can update itself in place
-  with `kzlogviewer update`.
+  with `kzlogviewer update`, printing the cumulative changelog of every release skipped over.
 
 ## Installation
 
@@ -68,13 +68,17 @@ go install github.com/karozadev/KzLogViewer/cmd/kzlogviewer@latest
 
 ```sh
 kzlogviewer            # launch the terminal UI
-kzlogviewer update      # download and install the latest release
+kzlogviewer update      # show the changelog and install the latest release
 kzlogviewer version     # print version information
 kzlogviewer help        # show usage
 ```
 
 A Docker daemon reachable at `/var/run/docker.sock` (or `$DOCKER_HOST`) is required. No configuration
 file is needed to get started.
+
+`kzlogviewer update` looks up every release newer than the one you are running, not just the latest
+one. If you skip several versions at once, it prints their changelogs concatenated, oldest first,
+before downloading and installing the newest matching release.
 
 ### Interface overview
 
