@@ -1,0 +1,36 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - staticcheck
+    - unused
+    - errcheck
+    - ineffassign
+    - misspell
+    - revive
+    - bodyclose
+    - gosec
+  settings:
+    gosec:
+      excludes:
+        - G204 # subprocess launched with variable input: not used in this codebase
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    paths:
+      - dist
