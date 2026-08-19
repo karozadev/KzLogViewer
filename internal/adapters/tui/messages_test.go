@@ -75,6 +75,10 @@ func (f fakeChecker) LatestRelease(ctx context.Context) (ports.Release, error) {
 	return f.release, f.err
 }
 
+func (f fakeChecker) ReleasesSince(ctx context.Context, currentVersion string) ([]ports.Release, error) {
+	return nil, f.err
+}
+
 func TestCheckForUpdateReturnsResult(t *testing.T) {
 	cmd := checkForUpdate(fakeChecker{release: ports.Release{Version: "v9.9.9"}})
 	msg, ok := cmd().(updateCheckMsg)

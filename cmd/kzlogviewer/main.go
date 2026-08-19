@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -48,7 +49,7 @@ func printUsage() {
 
 Usage:
   kzlogviewer            Launch the terminal UI
-  kzlogviewer update      Download and install the latest release
+  kzlogviewer update      Show the changelog and install the latest release
   kzlogviewer version     Print version information
   kzlogviewer help        Show this help message`)
 }
@@ -87,23 +88,47 @@ func runUpdate() int {
 	defer cancel()
 
 	checker := updater.NewGitHubChecker()
-	fmt.Println("Checking for the latest KzLogViewer release...")
-	release, err := checker.LatestRelease(ctx)
+	fmt.Println("Checking for new KzLogViewer releases...")
+	releases, err := checker.ReleasesSince(ctx, version.Version)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "check for updates: %v\n", err)
 		return 1
 	}
 
-	if !updater.IsNewer(version.Version, release.Version) {
+	if len(releases) == 0 {
 		fmt.Printf("Already up to date (%s).\n", version.Version)
 		return 0
 	}
 
-	fmt.Printf("Updating from %s to %s...\n", version.Version, release.Version)
-	if err := updater.NewBinaryApplier().Apply(ctx, release); err != nil {
+	printChangelog(releases)
+
+	target := releases[len(releases)-1]
+	if target.DownloadURL == "" {
+		fmt.Fprintf(os.Stderr, "no release asset for your platform in %s; download it manually from https://github.com/karozadev/KzLogViewer/releases/tag/%s\n", target.Version, target.Version)
+		return 1
+	}
+
+	fmt.Printf("Updating from %s to %s...\n", version.Version, target.Version)
+	if err := updater.NewBinaryApplier().Apply(ctx, target); err != nil {
 		fmt.Fprintf(os.Stderr, "apply update: %v\n", err)
 		return 1
 	}
-	fmt.Printf("Updated to %s.\n", release.Version)
+	fmt.Printf("Updated to %s.\n", target.Version)
 	return 0
+}
+
+// printChangelog prints the changelog of every release being skipped over,
+// oldest first, so jumping several versions at once shows the cumulative
+// history rather than only the latest release's notes.
+func printChangelog(releases []ports.Release) {
+	fmt.Println("\nChangelog:")
+	for _, r := range releases {
+		fmt.Printf("\n## %s\n", r.Version)
+		notes := strings.TrimSpace(r.Notes)
+		if notes == "" {
+			notes = "(no release notes)"
+		}
+		fmt.Println(notes)
+	}
+	fmt.Println()
 }
