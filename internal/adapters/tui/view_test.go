@@ -10,6 +10,39 @@ import (
 	"github.com/karozadev/KzLogViewer/internal/core/ports"
 )
 
+// TestViewFillsExactlyTerminalHeight guards against a regression where
+// View() rendered one line short of m.height. Bubbletea's alt-screen
+// renderer diffs frames by line count; any mismatch between the reported
+// height and the actual number of lines produced left a stale row on
+// screen that only became visible once content stopped changing every
+// frame (e.g. right after leaving the search box), showing up as a
+// "duplicated" status bar line.
+func TestViewFillsExactlyTerminalHeight(t *testing.T) {
+	for _, height := range []int{10, 24, 35, 40} {
+		for _, withBanner := range []bool{false, true} {
+			for _, detail := range []bool{false, true} {
+				m := newTestModel()
+				m.width, m.height = 100, height
+				if withBanner {
+					release := ports.Release{Version: "v9.9.9"}
+					m.updateRelease = &release
+				}
+				m = sendEntry(t, m, domain.LogEntry{ContainerName: "web", Message: "hello"})
+				if detail {
+					updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+					m = updated.(Model)
+				}
+
+				got := strings.Count(m.View(), "\n") + 1
+				if got != height {
+					t.Errorf("height=%d banner=%v detail=%v: View() produced %d lines, want %d",
+						height, withBanner, detail, got, height)
+				}
+			}
+		}
+	}
+}
+
 func TestViewBeforeWindowSizeShowsStartupMessage(t *testing.T) {
 	m := newTestModel()
 	m.width = 0

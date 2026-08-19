@@ -28,7 +28,7 @@ func (m Model) View() string {
 	sections = append(sections, renderHeatmap(m.heatmap.Last(m.width), m.width))
 	sections = append(sections, m.renderSearchBar())
 
-	bodyHeight := m.height - lineCount(sections) - 2 // reserve the status bar
+	bodyHeight := m.height - lineCount(sections) - 1 // reserve the status bar
 	if bodyHeight < 1 {
 		bodyHeight = 1
 	}
